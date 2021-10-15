@@ -31,9 +31,8 @@ void loop()
 
 void yuboxUpdateNTP(void)
 {
-  YuboxNTPConf.update();
-  if (!YuboxNTPConf.isNTPValid()) {
-    if (WiFi.isConnected()) Serial.println("ERR: fallo al obtener hora de red");
+  if (!YuboxNTPConf.update(0)) {
+    if (WiFi.isConnected()) log_e("fallo al obtener hora de red");
   } else {
     // TODO: activar banderas por ser NTP válido
   }

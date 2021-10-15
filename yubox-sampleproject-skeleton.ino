@@ -1,22 +1,10 @@
-#include <WiFi.h>
-#include "SPIFFS.h"
-#include <ESPAsyncWebServer.h>
+#include <Arduino.h>
+#include <YuboxSimple.h>
 
 #include <TaskScheduler.h>
 
-#define ARDUINOJSON_USE_LONG_LONG 1
-
-#include "AsyncJson.h"
-#include "ArduinoJson.h"
-
-#include "YuboxWiFiClass.h"
-#include "YuboxNTPConfigClass.h"
-#include "YuboxOTAClass.h"
-
-AsyncWebServer server(80);
 Scheduler yuboxScheduler;
 
-void notFound(AsyncWebServerRequest *);
 void setupAsyncServerHTTP(void);
 
 void yuboxUpdateNTP(void);
@@ -29,18 +17,7 @@ void setup()
   //delay(3000);
   Serial.begin(115200);
 
-  //Serial.println("DEBUG: inicializando SPIFFS...");
-  if (!SPIFFS.begin(true)) {
-    Serial.println("ERR: ha ocurrido un error al montar SPIFFS");
-    while (true) delay(1000);
-  }
-
-  // Limpiar archivos que queden de actualización fallida
-  YuboxOTA.cleanupFailedUpdateFiles();
-
   setupAsyncServerHTTP();
-
-  YuboxWiFi.beginServerOnWiFiReady(&server);
 
   // Actualización de NTP dentro de tarea
   yuboxScheduler.addTask(task_yuboxUpdateNTP);
@@ -64,20 +41,9 @@ void yuboxUpdateNTP(void)
 
 void setupAsyncServerHTTP(void)
 {
-  // Activar y agregar todas las rutas que requieren autenticación
-  YuboxWebAuth.setEnabled(true);	// <-- activar explícitamente la autenticación
+  // TODO: agregar más inicializaciones que usen yubox_HTTPServer como
+  // AsyncWebServer objetivo...
 
-  YuboxWiFi.begin(server);
-  YuboxWebAuth.begin(server);
-  YuboxNTPConf.begin(server);
-  YuboxOTA.begin(server);
-  server.onNotFound(notFound);
-
-  AsyncWebHandler &h = server.serveStatic("/", SPIFFS, "/");
-  YuboxWebAuth.addManagedHandler(&h);
-}
-
-void notFound(AsyncWebServerRequest *request)
-{
-  request->send(404, "application/json", "{\"success\":false,\"msg\":\"El recurso indicado no existe o no ha sido implementado\"}");
+  // Inicialización estándar va al final...
+  yuboxSimpleSetup();
 }
